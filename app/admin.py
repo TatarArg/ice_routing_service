@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ship, ShipPosition
+from .models import Ship, ShipPosition, WaterArea, WaterAreaPoint
 
 
 class ShipPositionInline(admin.TabularInline):
@@ -19,3 +19,14 @@ class ShipAdmin(admin.ModelAdmin):
 class ShipPositionAdmin(admin.ModelAdmin):
     list_display = ("ship", "time", "latitude", "longitude", "speed")
     list_filter = ("ship",)
+
+
+class WaterAreaPointInline(admin.TabularInline):
+    model = WaterAreaPoint
+    extra = 0
+
+
+@admin.register(WaterArea)
+class WaterAreaAdmin(admin.ModelAdmin):
+    list_display = ("name", "lat_min", "lat_max", "lon_min", "lon_max")
+    inlines = [WaterAreaPointInline]

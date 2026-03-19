@@ -21,3 +21,24 @@ class ShipPosition(models.Model):
 
     def __str__(self):
         return f"{self.ship.mmsi} @ {self.time}"
+
+
+class WaterArea(models.Model):
+    name = models.CharField(max_length=255)
+    lat_min = models.FloatField()
+    lat_max = models.FloatField()
+    lon_min = models.FloatField()
+    lon_max = models.FloatField()
+
+    def __str__(self):
+        return self.name
+
+
+class WaterAreaPoint(models.Model):
+    area = models.ForeignKey(WaterArea, on_delete=models.CASCADE, related_name="points")
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["order"]

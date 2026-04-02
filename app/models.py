@@ -42,3 +42,22 @@ class WaterAreaPoint(models.Model):
 
     class Meta:
         ordering = ["order"]
+
+
+class IceZone(models.Model):
+    ICE_TYPES = [
+        ("none", "Чистая вода"),
+        ("light", "Лёгкий лёд"),
+        ("medium", "Средний лёд"),
+        ("heavy", "Тяжёлый лёд"),
+    ]
+
+    area = models.ForeignKey(WaterArea, on_delete=models.CASCADE, related_name="ice_zones")
+    ice_type = models.CharField(max_length=20, choices=ICE_TYPES, default="none")
+    lat_min = models.FloatField()
+    lat_max = models.FloatField()
+    lon_min = models.FloatField()
+    lon_max = models.FloatField()
+
+    def __str__(self):
+        return f"{self.area.name} — {self.ice_type}"

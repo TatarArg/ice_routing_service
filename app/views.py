@@ -14,7 +14,7 @@ from .serializers import (
     ShipSerializer, WaterAreaSerializer, WaterAreaCreateSerializer,
     IceZoneSerializer, WaterAreaPointSerializer
 )
-from .services.route_service import generate_route
+from .services.route_service_clusters import generate_cluster_route
 
 
 ICE_IMPACT = {
@@ -37,6 +37,80 @@ ICE_CLASSES = list(ICE_IMPACT.keys())
 
 def index(request):
     return render(request, "index.html")
+
+
+def route_progress(request):
+    water_area_id = request.GET.get("water_area")
+    ice_class = request.GET.get("ice_class", "no_ice")
+
+    try:
+        start_lat = float(request.GET.get("start_lat"))
+        start_lon = float(request.GET.get("start_lon"))
+        end_lat   = float(request.GET.get("end_lat"))
+        end_lon   = float(request.GET.get("end_lon"))
+    except (TypeError, ValueError):
+        return StreamingHttpResponse(status=400)
+
+    if ice_class not in ICE_IMPACT:
+        ice_class = "no_ice"
+
+    try:
+        area = WaterArea.objects.get(pk=water_area_id)
+    except WaterArea.DoesNotExist:
+        return StreamingHttpResponse(status=404)
+
+    polygon_points = [
+        [float(p.latitude), float(p.longitude)]
+        for p in area.points.order_by("order")
+    ]
+    ice_zones = list(IceZone.objects.filter(water_area=area).values(
+        "ice_type", "lat_min", "lat_max", "lon_min", "lon_max"
+    ))
+    ice_coefficients = ICE_IMPACT[ice_class]
+
+    def event_stream():
+        event_queue = []
+        result_box = [None]
+        error_box  = [None]
+        done_event = threading.Event()
+
+        def run():
+            try:
+                result_box[0] = generate_cluster_route(
+                    start_lat, start_lon, end_lat, end_lon,
+                    area_polygon=polygon_points or None,
+                    area=area,
+                    ice_zones=ice_zones,
+                    ice_coefficients=ice_coefficients,
+                    progress_callback=lambda pct, msg: event_queue.append((pct, msg)),
+                )
+            except Exception as e:
+                error_box[0] = str(e)
+            finally:
+                done_event.set()
+
+        t = threading.Thread(target=run)
+        t.start()
+
+        sent = 0
+        while not done_event.is_set() or sent < len(event_queue):
+            while sent < len(event_queue):
+                pct, msg = event_queue[sent]
+                sent += 1
+                yield f"data: {json.dumps({'type': 'progress', 'pct': pct, 'msg': msg})}\n\n"
+            time.sleep(0.05)
+
+        t.join()
+
+        if error_box[0]:
+            yield f"data: {json.dumps({'type': 'error', 'msg': error_box[0]})}\n\n"
+        else:
+            yield f"data: {json.dumps({'type': 'done', 'route': result_box[0]})}\n\n"
+
+    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
 
 
 class ShipViewSet(viewsets.ReadOnlyModelViewSet):
@@ -65,6 +139,20 @@ class ShipViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="route")
     def route(self, request):
+        water_area_id = request.query_params.get("water_area")
+        ice_class = request.query_params.get("ice_class", "no_ice")
+
+        if not water_area_id:
+            return Response({"error": "Укажите water_area"}, status=400)
+
+        if ice_class not in ICE_IMPACT:
+            return Response({"error": f"Неизвестный ледовый класс: {ice_class}"}, status=400)
+
+        try:
+            area = WaterArea.objects.get(pk=water_area_id)
+        except WaterArea.DoesNotExist:
+            return Response({"error": "Акватория не найдена"}, status=404)
+
         try:
             start_lat = float(request.query_params.get("start_lat"))
             start_lon = float(request.query_params.get("start_lon"))
@@ -73,7 +161,22 @@ class ShipViewSet(viewsets.ReadOnlyModelViewSet):
         except (TypeError, ValueError):
             return Response({"error": "Укажите start_lat, start_lon, end_lat, end_lon"}, status=400)
 
-        route = generate_route(start_lat, start_lon, end_lat, end_lon)
+        polygon_points = [
+            [float(p.latitude), float(p.longitude)]
+            for p in area.points.order_by("order")
+        ]
+        ice_zones = list(IceZone.objects.filter(water_area=area).values(
+            "ice_type", "lat_min", "lat_max", "lon_min", "lon_max"
+        ))
+        ice_coefficients = ICE_IMPACT[ice_class]
+
+        route = generate_cluster_route(
+            start_lat, start_lon, end_lat, end_lon,
+            area_polygon=polygon_points if polygon_points else None,
+            area=area,
+            ice_zones=ice_zones,
+            ice_coefficients=ice_coefficients,
+        )
         return Response(route)
 
     @action(detail=True, methods=["get"], url_path="track")

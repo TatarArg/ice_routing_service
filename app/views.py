@@ -63,7 +63,7 @@ def route_progress(request):
         [float(p.latitude), float(p.longitude)]
         for p in area.points.order_by("order")
     ]
-    ice_zones = list(IceZone.objects.filter(water_area=area).values(
+    ice_zones = list(IceZone.objects.filter(area=area).values(
         "ice_type", "lat_min", "lat_max", "lon_min", "lon_max"
     ))
     ice_coefficients = ICE_IMPACT[ice_class]
@@ -213,7 +213,7 @@ class IceZoneViewSet(viewsets.ModelViewSet):
         queryset = IceZone.objects.all()
         water_area_id = self.request.query_params.get("water_area")
         if water_area_id:
-            queryset = queryset.filter(water_area=water_area_id)
+            queryset = queryset.filter(area=water_area_id)
         return queryset
 
 

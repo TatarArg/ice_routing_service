@@ -11,7 +11,7 @@ class ShipSerializer(serializers.ModelSerializer):
 class WaterAreaPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = WaterAreaPoint
-        fields = ("id", "latitude", "longitude", "order")
+        fields = ("id", "area", "latitude", "longitude", "order")
 
 
 class IceZoneSerializer(serializers.ModelSerializer):

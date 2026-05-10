@@ -55,7 +55,7 @@ function saveOctagonPoints(areaId, points) {
                 "X-CSRFToken": getCookie("csrftoken"),
             },
             body: JSON.stringify({
-                water_area: areaId,
+                area: areaId,
                 order: idx,
                 latitude: pt[0].toFixed(6),
                 longitude: pt[1].toFixed(6),

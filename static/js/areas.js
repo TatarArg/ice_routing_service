@@ -195,7 +195,7 @@ document.getElementById("save-ice-btn").addEventListener("click", () => {
             "X-CSRFToken": getCookie("csrftoken"),
         },
         body: JSON.stringify({
-            water_area: areaId,
+            area: areaId,
             ice_type: AppState.selectedIceType,
             lat_min: AppState.drawnBounds.getSouth().toFixed(6),
             lat_max: AppState.drawnBounds.getNorth().toFixed(6),

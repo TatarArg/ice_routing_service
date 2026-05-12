@@ -180,15 +180,18 @@ document.getElementById("cancel-ice-btn").addEventListener("click", () => {
     if (AppState.drawnRect) { drawnItems.removeLayer(AppState.drawnRect); AppState.drawnRect = null; }
     AppState.drawnBounds = null;
     document.getElementById("save-ice-block").style.display = "none";
-    AppState.drawMode = null;
+    const areaId = document.getElementById("water-area-select").value;
+    AppState.drawMode = areaId ? "ice" : null;
 });
+
+
 
 document.getElementById("save-ice-btn").addEventListener("click", () => {
     const areaId = document.getElementById("water-area-select").value;
     if (!areaId) { alert("Сначала выберите акваторию"); return; }
     if (!AppState.drawnBounds) return;
 
-    fetch("/api/ice-zones/", {
+    fetch("/api/ice-conditions/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -209,7 +212,7 @@ document.getElementById("save-ice-btn").addEventListener("click", () => {
             if (AppState.drawnRect) { drawnItems.removeLayer(AppState.drawnRect); AppState.drawnRect = null; }
             AppState.drawnBounds = null;
             document.getElementById("save-ice-block").style.display = "none";
-            AppState.drawMode = null;
+            AppState.drawMode = "ice";
             loadIceZones(areaId);
         } else {
             alert("Ошибка: " + JSON.stringify(data));
@@ -219,7 +222,7 @@ document.getElementById("save-ice-btn").addEventListener("click", () => {
 
 function deleteIceZone(id) {
     if (!confirm("Удалить ледовую зону?")) return;
-    fetch(`/api/ice-zones/${id}/`, {
+    fetch(`/api/ice-conditions/${id}/`, {
         method: "DELETE",
         headers: { "X-CSRFToken": getCookie("csrftoken") },
     }).then(() => {
@@ -273,7 +276,7 @@ function loadIceZones(areaId) {
 
     if (!areaId) return;
 
-    fetch(`/api/ice-zones/?water_area=${areaId}`)
+    fetch(`/api/ice-conditions/?water_area=${areaId}`)
         .then(res => res.json())
         .then(data => {
             const items = data.results || data;

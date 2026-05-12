@@ -3,14 +3,15 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from app.views import (
     ShipViewSet, WaterAreaViewSet, WaterAreaPointViewSet,
-    IceZoneViewSet, index, heatmap_data, courses_data, ice_classes, route_progress
+    IceConditionViewSet, ShipTypeViewSet, index, heatmap_data, courses_data, ice_classes, route_progress
 )
 
 router = DefaultRouter()
 router.register(r'ships', ShipViewSet, basename='ship')
 router.register(r'water-areas', WaterAreaViewSet, basename='waterarea')
 router.register(r'water-area-points', WaterAreaPointViewSet, basename='waterareapoint')
-router.register(r'ice-zones', IceZoneViewSet, basename='icezone')
+router.register(r'ice-conditions', IceConditionViewSet, basename='icecondition')
+router.register(r'ship-types', ShipTypeViewSet, basename='shiptype')
 
 urlpatterns = [
     path('', index),

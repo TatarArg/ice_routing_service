@@ -94,3 +94,18 @@ document.getElementById("water-area-select").addEventListener("change", () => {
 });
 
 loadWaterAreas();
+
+fetch("/api/ship-types/")
+    .then(res => res.json())
+    .then(data => {
+        const sel = document.getElementById("ice-class-select");
+        sel.innerHTML = "";
+        const items = data.results || data;
+        items.forEach(st => {
+            const opt = document.createElement("option");
+            opt.value = st.code;
+            opt.text = st.code;
+            sel.appendChild(opt);
+        });
+    });
+

@@ -1,24 +1,29 @@
 from django.db import models
 
 
-class Ship(models.Model):
-    class IceClass(models.TextChoices):
-        NO_ICE = "no_ice", "Без ледового класса"
-        ICE1 = "Ice1", "Ice1"
-        ICE2 = "Ice2", "Ice2"
-        ICE3 = "Ice3", "Ice3"
-        ARC4 = "Arc4", "Arc4"
-        ARC5 = "Arc5", "Arc5"
-        ARC6 = "Arc6", "Arc6"
-        ARC7 = "Arc7", "Arc7"
-        ARC8 = "Arc8", "Arc8"
-        ARC9 = "Arc9", "Arc9"
-        ICEBRAKER6 = "Icebraker6", "Icebraker6"
-        ICEBRAKER7 = "Icebraker7", "Icebraker7"
+class ShipType(models.Model):
+    code = models.CharField(max_length=20, unique=True)
 
+    def __str__(self):
+        return self.code
+
+
+class IceImpact(models.Model):
+    ship_type = models.ForeignKey(ShipType, on_delete=models.CASCADE, related_name="impacts")
+    ice_type = models.CharField(max_length=20)
+    coefficient = models.FloatField()
+
+    class Meta:
+        unique_together = ("ship_type", "ice_type")
+
+    def __str__(self):
+        return f"{self.ship_type.code} / {self.ice_type} = {self.coefficient}"
+
+
+class Ship(models.Model):
     mmsi = models.BigIntegerField(unique=True)
     name = models.CharField(max_length=255, blank=True)
-    ice_class = models.CharField(max_length=20, choices=IceClass.choices, default=IceClass.NO_ICE)
+    ship_type = models.ForeignKey(ShipType, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name or f"MMSI {self.mmsi}"
@@ -60,14 +65,14 @@ class WaterAreaPoint(models.Model):
         ordering = ["order"]
 
 
-class IceZone(models.Model):
+class IceCondition(models.Model):
     ICE_TYPES = [
         ("none", "Открытая вода"),
         ("light", "Молодой лёд"),
         ("heavy", "Толстый лёд"),
     ]
 
-    area = models.ForeignKey(WaterArea, on_delete=models.CASCADE, related_name="ice_zones")
+    area = models.ForeignKey(WaterArea, on_delete=models.CASCADE, related_name="ice_conditions")
     ice_type = models.CharField(max_length=20, choices=ICE_TYPES, default="none")
     lat_min = models.FloatField()
     lat_max = models.FloatField()

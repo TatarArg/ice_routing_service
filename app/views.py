@@ -9,30 +9,20 @@ from django.db.models import Count
 from django.shortcuts import render
 from django.http import StreamingHttpResponse
 
-from .models import Ship, ShipPosition, WaterArea, WaterAreaPoint, IceZone
+from .models import Ship, ShipPosition, WaterArea, WaterAreaPoint, IceCondition, ShipType, IceImpact
 from .serializers import (
     ShipSerializer, WaterAreaSerializer, WaterAreaCreateSerializer,
-    IceZoneSerializer, WaterAreaPointSerializer
+    IceConditionSerializer, WaterAreaPointSerializer, ShipTypeSerializer
 )
 from .services.route_service_clusters import generate_cluster_route
 
 
-ICE_IMPACT = {
-    "no_ice":     {"none": 2.0, "light": float("inf"), "heavy": float("inf")},
-    "Ice1":       {"none": 2.0, "light": 10.0,         "heavy": float("inf")},
-    "Ice2":       {"none": 2.0, "light": 10.0,         "heavy": float("inf")},
-    "Ice3":       {"none": 2.0, "light": 10.0,         "heavy": float("inf")},
-    "Arc4":       {"none": 2.0, "light": 10.0,         "heavy": 30.0},
-    "Arc5":       {"none": 2.0, "light": 10.0,         "heavy": 30.0},
-    "Arc6":       {"none": 2.0, "light": 10.0,         "heavy": 25.0},
-    "Arc7":       {"none": 2.0, "light": 10.0,         "heavy": 20.0},
-    "Arc8":       {"none": 2.0, "light": 10.0,         "heavy": 15.0},
-    "Arc9":       {"none": 2.0, "light": 10.0,         "heavy": 13.0},
-    "Icebraker6": {"none": 2.0, "light": 10.0,         "heavy": 10.0},
-    "Icebraker7": {"none": 2.0, "light": 10.0,         "heavy": 5.0},
-}
-
-ICE_CLASSES = list(ICE_IMPACT.keys())
+def get_ice_coefficients(ice_class_code):
+    try:
+        ship_type = ShipType.objects.prefetch_related("impacts").get(code=ice_class_code)
+        return {impact.ice_type: impact.coefficient for impact in ship_type.impacts.all()}
+    except ShipType.DoesNotExist:
+        return {}
 
 
 def index(request):
@@ -51,9 +41,6 @@ def route_progress(request):
     except (TypeError, ValueError):
         return StreamingHttpResponse(status=400)
 
-    if ice_class not in ICE_IMPACT:
-        ice_class = "no_ice"
-
     try:
         area = WaterArea.objects.get(pk=water_area_id)
     except WaterArea.DoesNotExist:
@@ -63,10 +50,10 @@ def route_progress(request):
         [float(p.latitude), float(p.longitude)]
         for p in area.points.order_by("order")
     ]
-    ice_zones = list(IceZone.objects.filter(area=area).values(
+    ice_zones = list(IceCondition.objects.filter(area=area).values(
         "ice_type", "lat_min", "lat_max", "lon_min", "lon_max"
     ))
-    ice_coefficients = ICE_IMPACT[ice_class]
+    ice_coefficients = get_ice_coefficients(ice_class)
 
     def event_stream():
         event_queue = []
@@ -145,9 +132,6 @@ class ShipViewSet(viewsets.ReadOnlyModelViewSet):
         if not water_area_id:
             return Response({"error": "Укажите water_area"}, status=400)
 
-        if ice_class not in ICE_IMPACT:
-            return Response({"error": f"Неизвестный ледовый класс: {ice_class}"}, status=400)
-
         try:
             area = WaterArea.objects.get(pk=water_area_id)
         except WaterArea.DoesNotExist:
@@ -165,10 +149,10 @@ class ShipViewSet(viewsets.ReadOnlyModelViewSet):
             [float(p.latitude), float(p.longitude)]
             for p in area.points.order_by("order")
         ]
-        ice_zones = list(IceZone.objects.filter(water_area=area).values(
+        ice_zones = list(IceCondition.objects.filter(area=area).values(
             "ice_type", "lat_min", "lat_max", "lon_min", "lon_max"
         ))
-        ice_coefficients = ICE_IMPACT[ice_class]
+        ice_coefficients = get_ice_coefficients(ice_class)
 
         route = generate_cluster_route(
             start_lat, start_lon, end_lat, end_lon,
@@ -206,15 +190,20 @@ class WaterAreaPointViewSet(viewsets.ModelViewSet):
     queryset = WaterAreaPoint.objects.all()
 
 
-class IceZoneViewSet(viewsets.ModelViewSet):
-    serializer_class = IceZoneSerializer
+class IceConditionViewSet(viewsets.ModelViewSet):
+    serializer_class = IceConditionSerializer
 
     def get_queryset(self):
-        queryset = IceZone.objects.all()
+        queryset = IceCondition.objects.all()
         water_area_id = self.request.query_params.get("water_area")
         if water_area_id:
             queryset = queryset.filter(area=water_area_id)
         return queryset
+
+
+class ShipTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ShipType.objects.all()
+    serializer_class = ShipTypeSerializer
 
 
 @api_view(["GET"])
@@ -271,4 +260,5 @@ def courses_data(request):
 
 @api_view(["GET"])
 def ice_classes(request):
-    return Response(ICE_CLASSES)
+    ship_types = ShipType.objects.values_list("code", flat=True)
+    return Response(list(ship_types))

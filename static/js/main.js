@@ -63,6 +63,8 @@ document.getElementById("water-area-select").addEventListener("change", () => {
         loadIceZones(null);
         document.getElementById("ice-type-select").style.display = "none";
         document.getElementById("ice-hint").style.display = "block";
+        document.getElementById("draw-mode-toggle").style.display = "none";
+        AppState.drawMode = null;
         return;
     }
 
@@ -87,7 +89,10 @@ document.getElementById("water-area-select").addEventListener("change", () => {
     document.getElementById("route-points-block").style.display = "block";
     document.getElementById("ice-hint").style.display = "none";
     document.getElementById("ice-type-select").style.display = "flex";
+    document.getElementById("draw-mode-toggle").style.display = "flex";
     AppState.drawMode = "ice";
+    document.getElementById("draw-ice-btn").style.background = "#1976D2";
+    document.getElementById("draw-area-btn").style.background = "#43a047";
 
     loadIceZones(areaId);
     status.textContent = "";
@@ -108,4 +113,3 @@ fetch("/api/ship-types/")
             sel.appendChild(opt);
         });
     });
-

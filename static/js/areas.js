@@ -180,8 +180,7 @@ document.getElementById("cancel-ice-btn").addEventListener("click", () => {
     if (AppState.drawnRect) { drawnItems.removeLayer(AppState.drawnRect); AppState.drawnRect = null; }
     AppState.drawnBounds = null;
     document.getElementById("save-ice-block").style.display = "none";
-    const areaId = document.getElementById("water-area-select").value;
-    AppState.drawMode = areaId ? "ice" : null;
+    AppState.drawMode = "ice";
 });
 
 
@@ -308,3 +307,15 @@ function loadIceZones(areaId) {
             });
         });
 }
+
+document.getElementById("draw-area-btn").addEventListener("click", () => {
+    AppState.drawMode = "area";
+    document.getElementById("draw-area-btn").style.background = "#1976D2";
+    document.getElementById("draw-ice-btn").style.background = "#2196F3";
+});
+
+document.getElementById("draw-ice-btn").addEventListener("click", () => {
+    AppState.drawMode = "ice";
+    document.getElementById("draw-ice-btn").style.background = "#1976D2";
+    document.getElementById("draw-area-btn").style.background = "#43a047";
+});

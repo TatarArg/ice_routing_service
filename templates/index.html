@@ -9,7 +9,7 @@
     <div>
         <h2>Акватория</h2>
         <select id="water-area-select">
-            <option value="">— выберите акваторию —</option>
+            <option value="">Выберите акваторию</option>
         </select>
     </div>
 
@@ -34,12 +34,7 @@
 
     <div id="status"></div>
 
-    <div class="info-block">
-        <h2>Текущее состояние судна</h2>
-        <p>Широта: <span id="cur-lat">—</span></p>
-        <p>Долгота: <span id="cur-lon">—</span></p>
-        <p>Скорость: <span id="cur-speed">—</span></p>
-    </div>
+
 
     <button id="export-xml-btn" style="margin-top:8px; background:#7b1fa2; color:white;">Выгрузить данные в XML</button>
 
@@ -48,12 +43,6 @@
     <div>
         <h2>Слои на карте</h2>
         <div class="layer-toggles">
-            <label class="toggle-row">
-                <input type="checkbox" id="toggle-heatmap-global"> Тепловая карта (все данные)
-            </label>
-            <label class="toggle-row">
-                <input type="checkbox" id="toggle-heatmap-area" disabled> Тепловая карта (акватория)
-            </label>
             <label class="toggle-row">
                 <input type="checkbox" id="toggle-courses" disabled> Курсы судов (стрелки)
             </label>
@@ -70,10 +59,7 @@
         <h2>Управление акваториями</h2>
     </div>
 
-    <div class="mode-tabs">
-        <button class="mode-tab active" id="tab-rect" onclick="switchMode('rect')">Прямоугольник</button>
-        <button class="mode-tab" id="tab-circle" onclick="switchMode('circle')">Центр+радиус</button>
-    </div>
+
 
     <div id="draw-mode-toggle" style="display:none; gap:6px;">
         <button id="draw-area-btn" class="btn-green">Нарисовать акваторию</button>
@@ -118,26 +104,6 @@
         </div>
     </div>
 
-    <div id="mode-circle" style="display:none;">
-        <div class="radius-block">
-            <p>Кликните на карте чтобы выбрать центр акватории</p>
-            <div class="slider-row" style="margin-bottom:8px;">
-                <label>Радиус (км)</label>
-                <input type="range" id="circle-radius" min="50" max="500" value="150" oninput="updateCirclePreview()">
-                <span id="circle-radius-val">150</span>
-            </div>
-            <div class="slider-row">
-                <label>Срезание углов</label>
-                <input type="range" id="circle-cut" min="5" max="40" value="20" oninput="updateCirclePreview()">
-                <span id="circle-cut-val">20%</span>
-            </div>
-        </div>
-        <div id="save-circle-block" style="display:none; flex-direction:column; gap:6px; margin-top:8px;">
-            <input type="text" id="circle-name-input" placeholder="Название акватории"/>
-            <button class="btn-green" id="save-circle-btn">Сохранить акваторию</button>
-            <button class="btn-red" id="cancel-circle-btn">Отмена</button>
-        </div>
-    </div>
 
     <div id="area-list"></div>
 

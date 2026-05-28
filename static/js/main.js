@@ -7,7 +7,7 @@ map.on("click", function(e) {
         if (AppState.startMarker) map.removeLayer(AppState.startMarker);
         AppState.startMarker = L.circleMarker(e.latlng, {
             radius: 8, color: "green", fillColor: "green", fillOpacity: 1
-        }).addTo(map).bindPopup("Начало маршрута").openPopup();
+        }).addTo(map);
 
         AppState.pickingMode = null;
         document.getElementById("pick-start-btn").classList.remove("selecting");
@@ -24,7 +24,7 @@ map.on("click", function(e) {
         if (AppState.endMarker) map.removeLayer(AppState.endMarker);
         AppState.endMarker = L.circleMarker(e.latlng, {
             radius: 8, color: "red", fillColor: "red", fillOpacity: 1
-        }).addTo(map).bindPopup("Конец маршрута").openPopup();
+        }).addTo(map);
 
         AppState.pickingMode = null;
         document.getElementById("pick-end-btn").classList.remove("selecting");

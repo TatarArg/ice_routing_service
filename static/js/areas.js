@@ -1,22 +1,3 @@
-function switchMode(mode) {
-    AppState.currentMode = mode;
-    document.getElementById("mode-rect").style.display = mode === "rect" ? "block" : "none";
-    document.getElementById("mode-circle").style.display = mode === "circle" ? "block" : "none";
-    document.getElementById("tab-rect").classList.toggle("active", mode === "rect");
-    document.getElementById("tab-circle").classList.toggle("active", mode === "circle");
-
-    if (AppState.circlePreviewLayer) { map.removeLayer(AppState.circlePreviewLayer); AppState.circlePreviewLayer = null; }
-    if (AppState.drawnRect) { drawnItems.removeLayer(AppState.drawnRect); AppState.drawnRect = null; }
-    if (AppState.octagonPreview) { map.removeLayer(AppState.octagonPreview); AppState.octagonPreview = null; }
-    AppState.drawnBounds = null;
-    AppState.circleCenter = null;
-
-    document.getElementById("save-area-block").style.display = "none";
-    document.getElementById("save-circle-block").style.display = "none";
-    document.getElementById("sliders-block").style.display = "none";
-    document.getElementById("draw-hint").style.display = mode === "rect" ? "block" : "none";
-}
-
 function updateOctagon() {
     if (!AppState.drawnBounds) return;
 
@@ -39,8 +20,6 @@ function updateOctagon() {
 }
 
 map.on(L.Draw.Event.CREATED, function(e) {
-    if (AppState.currentMode !== "rect") return;
-
     if (AppState.drawnRect) drawnItems.removeLayer(AppState.drawnRect);
     AppState.drawnRect = e.layer;
     drawnItems.addLayer(AppState.drawnRect);
@@ -82,40 +61,6 @@ document.getElementById("cancel-area-btn").addEventListener("click", () => {
     document.getElementById("area-name-input").value = "";
 });
 
-function updateCirclePreview() {
-    const radiusVal = document.getElementById("circle-radius").value;
-    const cutVal = document.getElementById("circle-cut").value;
-    document.getElementById("circle-radius-val").textContent = radiusVal;
-    document.getElementById("circle-cut-val").textContent = cutVal + "%";
-
-    if (!AppState.circleCenter) return;
-
-    const pts = computeOctagonFromCenter(AppState.circleCenter, parseInt(radiusVal), parseInt(cutVal));
-    if (AppState.circlePreviewLayer) map.removeLayer(AppState.circlePreviewLayer);
-    AppState.circlePreviewLayer = L.polygon(pts, {
-        color: "#2196F3", weight: 2, fillOpacity: 0.1, dashArray: "5,5"
-    }).addTo(map);
-}
-
-document.getElementById("save-circle-btn").addEventListener("click", () => {
-    const name = document.getElementById("circle-name-input").value.trim();
-    if (!name) { alert("Введите название акватории"); return; }
-    if (!AppState.circleCenter) return;
-
-    const radiusVal = parseInt(document.getElementById("circle-radius").value);
-    const cutVal = parseInt(document.getElementById("circle-cut").value);
-    const pts = computeOctagonFromCenter(AppState.circleCenter, radiusVal, cutVal);
-
-    saveAreaFromPoints(name, pts);
-});
-
-document.getElementById("cancel-circle-btn").addEventListener("click", () => {
-    if (AppState.circlePreviewLayer) { map.removeLayer(AppState.circlePreviewLayer); AppState.circlePreviewLayer = null; }
-    AppState.circleCenter = null;
-    document.getElementById("save-circle-block").style.display = "none";
-    document.getElementById("circle-name-input").value = "";
-});
-
 function saveAreaFromPoints(name, pts) {
     const lats = pts.map(p => p[0]);
     const lons = pts.map(p => p[1]);
@@ -141,15 +86,11 @@ function saveAreaFromPoints(name, pts) {
         saveOctagonPoints(data.id, pts).then(() => {
             if (AppState.drawnRect) { drawnItems.removeLayer(AppState.drawnRect); AppState.drawnRect = null; }
             if (AppState.octagonPreview) { map.removeLayer(AppState.octagonPreview); AppState.octagonPreview = null; }
-            if (AppState.circlePreviewLayer) { map.removeLayer(AppState.circlePreviewLayer); AppState.circlePreviewLayer = null; }
             AppState.drawnBounds = null;
-            AppState.circleCenter = null;
             document.getElementById("save-area-block").style.display = "none";
-            document.getElementById("save-circle-block").style.display = "none";
             document.getElementById("sliders-block").style.display = "none";
-            document.getElementById("draw-hint").style.display = AppState.currentMode === "rect" ? "block" : "none";
+            document.getElementById("draw-hint").style.display = "block";
             document.getElementById("area-name-input").value = "";
-            document.getElementById("circle-name-input").value = "";
             loadWaterAreas();
         });
     });
@@ -182,8 +123,6 @@ document.getElementById("cancel-ice-btn").addEventListener("click", () => {
     document.getElementById("save-ice-block").style.display = "none";
     AppState.drawMode = "ice";
 });
-
-
 
 document.getElementById("save-ice-btn").addEventListener("click", () => {
     const areaId = document.getElementById("water-area-select").value;
@@ -238,7 +177,7 @@ function loadWaterAreas() {
             const sel = document.getElementById("water-area-select");
             const current = sel.value;
 
-            sel.innerHTML = "<option value=''>— выберите акваторию —</option>";
+            sel.innerHTML = "<option value=''>выберите акваторию</option>";
             items.forEach(area => {
                 const option = document.createElement("option");
                 option.value = area.id;
@@ -253,6 +192,11 @@ function loadWaterAreas() {
                 sel.appendChild(option);
             });
             sel.value = current;
+
+            if (sel.value) {
+                const selectedOpt = sel.options[sel.selectedIndex];
+                loadSavedRoutes(selectedOpt.text);
+            }
 
             const areaList = document.getElementById("area-list");
             areaList.innerHTML = "";

@@ -1,57 +1,11 @@
 const LayerState = {
-    heatmapGlobal: null,
-    heatmapArea: null,
     shipTrack: null,
     coursesLayer: null,
 };
 
-function initHeatmap(points, key) {
-    if (LayerState[key]) {
-        map.removeLayer(LayerState[key]);
-        LayerState[key] = null;
-    }
-    if (!points.length) return;
-    LayerState[key] = L.heatLayer(points, { radius: 20, blur: 15, maxZoom: 10 }).addTo(map);
-}
-
-document.getElementById("toggle-heatmap-global").addEventListener("change", function () {
-    if (!this.checked) {
-        if (LayerState.heatmapGlobal) { map.removeLayer(LayerState.heatmapGlobal); LayerState.heatmapGlobal = null; }
-        return;
-    }
-    document.getElementById("status").textContent = "Загружаем тепловую карту...";
-    fetch("/api/heatmap/?limit=10000")
-        .then(res => res.json())
-        .then(data => {
-            initHeatmap(data, "heatmapGlobal");
-            document.getElementById("status").textContent = `Тепловая карта: ${data.length} точек`;
-        });
-});
-
-document.getElementById("toggle-heatmap-area").addEventListener("change", function () {
-    if (!this.checked) {
-        if (LayerState.heatmapArea) { map.removeLayer(LayerState.heatmapArea); LayerState.heatmapArea = null; }
-        return;
-    }
-    const areaId = document.getElementById("water-area-select").value;
-    if (!areaId) return;
-
-    document.getElementById("status").textContent = "Загружаем тепловую карту акватории...";
-    fetch(`/api/heatmap/?water_area=${areaId}&limit=10000`)
-        .then(res => res.json())
-        .then(data => {
-            initHeatmap(data, "heatmapArea");
-            document.getElementById("status").textContent = `Тепловая карта акватории: ${data.length} точек`;
-        });
-});
-
 function updateLayerToggles(areaId) {
-    const areaToggle = document.getElementById("toggle-heatmap-area");
-    areaToggle.disabled = !areaId;
     document.getElementById("toggle-courses").disabled = !areaId;
     if (!areaId) {
-        areaToggle.checked = false;
-        if (LayerState.heatmapArea) { map.removeLayer(LayerState.heatmapArea); LayerState.heatmapArea = null; }
         document.getElementById("toggle-courses").checked = false;
         if (LayerState.coursesLayer) { map.removeLayer(LayerState.coursesLayer); LayerState.coursesLayer = null; }
     }

@@ -194,7 +194,8 @@ class RouteViewSet(viewsets.ModelViewSet):
         area_name = request.query_params.get("area_name")
         if area_name:
             qs = qs.filter(area_name=area_name)
-        count, _ = qs.delete()
+        count = qs.count()
+        qs.delete()
         return Response({"deleted": count})
 
 
@@ -250,9 +251,9 @@ def export_xml(request):
     from django.http import HttpResponse
     from xml.etree.ElementTree import Element, SubElement, tostring
     from xml.dom import minidom
-
+ 
     root = Element("map")
-
+ 
     areas = WaterArea.objects.prefetch_related("points", "ice_conditions").all()
     for area in areas:
         area_el = SubElement(root, "water_area")
@@ -262,14 +263,14 @@ def export_xml(request):
         area_el.set("lat_max", str(area.lat_max))
         area_el.set("lon_min", str(area.lon_min))
         area_el.set("lon_max", str(area.lon_max))
-
+ 
         points_el = SubElement(area_el, "boundary_points")
         for pt in area.points.order_by("order"):
             pt_el = SubElement(points_el, "point")
             pt_el.set("order", str(pt.order))
             pt_el.set("latitude", str(pt.latitude))
             pt_el.set("longitude", str(pt.longitude))
-
+ 
         ice_el = SubElement(area_el, "ice_conditions")
         for zone in area.ice_conditions.all():
             zone_el = SubElement(ice_el, "zone")
@@ -279,7 +280,23 @@ def export_xml(request):
             zone_el.set("lat_max", str(zone.lat_max))
             zone_el.set("lon_min", str(zone.lon_min))
             zone_el.set("lon_max", str(zone.lon_max))
-
+ 
+        routes_el = SubElement(area_el, "routes")
+        for route in Route.objects.prefetch_related("points").filter(area_name=area.name):
+            route_el = SubElement(routes_el, "route")
+            route_el.set("id", str(route.id))
+            route_el.set("created_at", str(route.created_at))
+            route_el.set("start_lat", str(route.start_lat))
+            route_el.set("start_lon", str(route.start_lon))
+            route_el.set("end_lat", str(route.end_lat))
+            route_el.set("end_lon", str(route.end_lon))
+            for pt in route.points.order_by("order"):
+                rpt_el = SubElement(route_el, "point")
+                rpt_el.set("order", str(pt.order))
+                rpt_el.set("latitude", str(pt.latitude))
+                rpt_el.set("longitude", str(pt.longitude))
+                rpt_el.set("point_type", pt.point_type)
+ 
     xml_str = minidom.parseString(tostring(root, encoding="unicode")).toprettyxml(indent="  ")
     response = HttpResponse(xml_str, content_type="application/xml")
     response["Content-Disposition"] = 'attachment; filename="map_export.xml"'

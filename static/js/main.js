@@ -1,5 +1,28 @@
+function pointInPolygon(lat, lng, polygonLatLngs) {
+    let inside = false;
+    const n = polygonLatLngs.length;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+        const xi = polygonLatLngs[i][0], yi = polygonLatLngs[i][1];
+        const xj = polygonLatLngs[j][0], yj = polygonLatLngs[j][1];
+        const intersect = ((yi > lng) !== (yj > lng)) &&
+            (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+function isPointInArea(latlng) {
+    if (!AppState.areaLayer) return true; 
+    const pts = AppState.areaLayer.getLatLngs()[0].map(p => [p.lat, p.lng]);
+    return pointInPolygon(latlng.lat, latlng.lng, pts);
+}
+
 map.on("click", function(e) {
     if (AppState.pickingMode === "start") {
+        if (!isPointInArea(e.latlng)) {
+            setStatus("Начальная точка должна находиться внутри акватории");
+            return;
+        }
         AppState.routeStart = e.latlng;
         document.getElementById("start-coords").textContent =
             e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
@@ -17,6 +40,10 @@ map.on("click", function(e) {
     }
 
     if (AppState.pickingMode === "end") {
+        if (!isPointInArea(e.latlng)) {
+            setStatus("Конечная точка должна находиться внутри акватории");
+            return;
+        }
         AppState.routeEnd = e.latlng;
         document.getElementById("end-coords").textContent =
             e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
@@ -31,12 +58,6 @@ map.on("click", function(e) {
         document.getElementById("pick-end-btn").textContent = "Выбрать конец";
         checkRunBtn();
         return;
-    }
-
-    if (AppState.currentMode === "circle" && AppState.drawMode !== "ice") {
-        AppState.circleCenter = e.latlng;
-        document.getElementById("save-circle-block").style.display = "flex";
-        updateCirclePreview();
     }
 });
 

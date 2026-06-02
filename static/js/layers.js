@@ -5,9 +5,10 @@ const LayerState = {
 
 function updateLayerToggles(areaId) {
     document.getElementById("toggle-courses").disabled = !areaId;
-    if (!areaId) {
-        document.getElementById("toggle-courses").checked = false;
-        if (LayerState.coursesLayer) { map.removeLayer(LayerState.coursesLayer); LayerState.coursesLayer = null; }
+    document.getElementById("toggle-courses").checked = false;
+    if (LayerState.coursesLayer) {
+        map.removeLayer(LayerState.coursesLayer);
+        LayerState.coursesLayer = null;
     }
 }
 

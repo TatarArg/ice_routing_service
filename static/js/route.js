@@ -6,7 +6,7 @@ document.getElementById("pick-start-btn").addEventListener("click", () => {
     } else {
         AppState.pickingMode = "start";
         document.getElementById("pick-start-btn").classList.add("selecting");
-        document.getElementById("pick-start-btn").textContent = "Кликните на карте...";
+        document.getElementById("pick-start-btn").textContent = "Кликните на карте";
         document.getElementById("pick-end-btn").classList.remove("selecting");
         document.getElementById("pick-end-btn").textContent = "Выбрать конец";
     }
@@ -20,7 +20,7 @@ document.getElementById("pick-end-btn").addEventListener("click", () => {
     } else {
         AppState.pickingMode = "end";
         document.getElementById("pick-end-btn").classList.add("selecting");
-        document.getElementById("pick-end-btn").textContent = "Кликните на карте...";
+        document.getElementById("pick-end-btn").textContent = "Кликните на карте";
         document.getElementById("pick-start-btn").classList.remove("selecting");
         document.getElementById("pick-start-btn").textContent = "Выбрать начало";
     }

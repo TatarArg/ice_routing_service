@@ -68,7 +68,10 @@ document.getElementById("water-area-select").addEventListener("change", () => {
 
     runBtn.disabled = true;
     clearRoute();
+    clearSavedRoutes();
 
+    if (AppState.startMarker) { map.removeLayer(AppState.startMarker); AppState.startMarker = null; }
+    if (AppState.endMarker) { map.removeLayer(AppState.endMarker); AppState.endMarker = null; }
     if (AppState.areaLayer) { map.removeLayer(AppState.areaLayer); AppState.areaLayer = null; }
 
     AppState.routeStart = null;

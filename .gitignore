@@ -2,7 +2,6 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
-db.sqlite3
 AIS_2024_01_01.csv
 *.csv
 
